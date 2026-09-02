@@ -39,32 +39,53 @@ namespace Model
 		bool IsConnectable() const { return clips > 0; }
 	}
 
-	// The variant a block is placed as by default. Ground first because that is
-	// what a decoration pass puts on the map; air-only blocks (gantries, some
-	// signs) still have to be catalogued, hence the fallbacks.
+	// True when a variant actually carries cells. A variant handle that is not
+	// null can still hold an empty BlockUnitModels, and such a variant tells us
+	// nothing: no cells means no clips can be read from it either.
+	bool IsPopulated(CGameCtnBlockInfoVariant@ variant)
+	{
+		return variant !is null && variant.BlockUnitModels.Length > 0;
+	}
+
+	// The variant a block should be catalogued from: the first candidate that
+	// actually has cells.
 	//
-	// VariantBase* rather than Variant*: Openplanet.h declares both, but
-	// VariantGround / VariantAir carry the "// Maniascript" marker - they are
-	// the narrower view ManiaScript is given. Reading through them was costing
-	// us blocks: StadiumRoadDirtMultiLap came back with a null variant, hence
-	// zero cells and zero clips, and so counted as a block joining nothing -
-	// which for a road block is plainly false.
+	// The order below is not a preference, it is what measurement forced.
+	// Openplanet.h declares VariantGround / VariantAir carrying a
+	// "// Maniascript" marker, and VariantBaseGround / VariantBaseAir /
+	// AdditionalVariants* without one. Reading the unmarked pair first looked
+	// right - they are the fields ManiaScript cannot see, and reaching them is
+	// why this plugin is in Openplanet at all. It was wrong: on the scenery
+	// families VariantBaseGround is non-null but EMPTY, and preferring it took
+	// the clip-less count from 1 of 551 to 154 of 551, every one of them at
+	// zero cells. The marked pair is not a narrower view, it is the RESOLVED
+	// one.
 	//
-	// AdditionalVariants* is the last resort and is the whole reason this
-	// plugin is in Openplanet at all: ManiaScript cannot see those buffers.
-	// A block whose only variants live there is invisible to the narrow view.
+	// So the rule is not "which field is better" - it is "which handle has
+	// cells". That survives being wrong about any single field.
 	CGameCtnBlockInfoVariant@ DefaultVariantOf(CGameCtnBlockInfo@ model)
 	{
 		if (model is null) return null;
 
-		if (model.VariantBaseGround !is null) return model.VariantBaseGround;
-		if (model.VariantBaseAir !is null) return model.VariantBaseAir;
+		// Ground before air: a decoration pass puts blocks on the ground, and
+		// air-only blocks (gantries, some signs) still need cataloguing.
+		if (IsPopulated(model.VariantGround)) return model.VariantGround;
+		if (IsPopulated(model.VariantAir)) return model.VariantAir;
 
-		if (model.AdditionalVariantsGround.Length > 0) {
-			return model.AdditionalVariantsGround[0];
+		if (IsPopulated(model.VariantBaseGround)) return model.VariantBaseGround;
+		if (IsPopulated(model.VariantBaseAir)) return model.VariantBaseAir;
+
+		// Last resort, and invisible to ManiaScript: a block whose only usable
+		// variant lives in these buffers is unreadable without Openplanet.
+		for (uint i = 0; i < model.AdditionalVariantsGround.Length; i++) {
+			if (IsPopulated(model.AdditionalVariantsGround[i])) {
+				return model.AdditionalVariantsGround[i];
+			}
 		}
-		if (model.AdditionalVariantsAir.Length > 0) {
-			return model.AdditionalVariantsAir[0];
+		for (uint i = 0; i < model.AdditionalVariantsAir.Length; i++) {
+			if (IsPopulated(model.AdditionalVariantsAir[i])) {
+				return model.AdditionalVariantsAir[i];
+			}
 		}
 		return null;
 	}

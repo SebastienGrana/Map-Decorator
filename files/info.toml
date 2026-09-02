@@ -2,7 +2,7 @@
 name     = "MapDecorator"
 author   = "SebastienGrana"
 category = "Editor"
-version  = "0.2.2"
+version  = "0.2.3"
 
 # Openplanet compiles every .as file in this folder into ONE module - there is
 # no #include and no per-file scope. The MVC layers are therefore namespaces,

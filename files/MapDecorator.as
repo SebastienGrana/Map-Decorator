@@ -18,7 +18,7 @@
 // STATUS: reads the palette and reports what joins nothing. Nothing is placed.
 
 // Shown in the window title so a screenshot always says which build is loaded.
-const string c_Version = "0.2.2";
+const string c_Version = "0.2.3";
 
 // Whether the plugin window is open. A plain global rather than a local of
 // Main(), because RenderMenu() toggles it from outside the frame loop.
