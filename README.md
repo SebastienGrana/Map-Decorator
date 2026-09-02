@@ -4,10 +4,11 @@ Plugin **Openplanet** pour l'éditeur de ManiaPlanet / TrackMania² Stadium, qui
 décore une carte déjà construite par un joueur.
 
 Livrable **séparé** de TrackGen : aucun code partagé, et pas la même plateforme
-(TrackGen est en ManiaScript). Voir `context AI/CONTEXTE-MAPDECORATOR.md` pour
-le contexte complet, et son § 1.1 pour la raison du choix d'Openplanet.
+(TrackGen est en ManiaScript). Le contexte de travail vit dans `context AI/`,
+qui n'est pas versionné.
 
-État : **déclaration** — les fichiers existent, rien n'est implémenté.
+État : **premier scan** — le plugin lit la palette et rapporte les blocs qui ne
+déclarent aucun clip. Rien n'est posé sur la carte.
 
 ## Structure
 

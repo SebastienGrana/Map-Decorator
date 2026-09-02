@@ -15,11 +15,10 @@
 // and only has the space the track left over. Reading comes before writing
 // here, which is why Model::Scan exists and has no counterpart in TrackGen.
 //
-// STATUS: declaration only. The plugin loads, finds the editor and shows an
-// empty window; nothing reads the map and nothing is placed.
+// STATUS: reads the palette and reports what joins nothing. Nothing is placed.
 
 // Shown in the window title so a screenshot always says which build is loaded.
-const string c_Version = "0.1.0";
+const string c_Version = "0.2.0";
 
 // Whether the plugin window is open. A plain global rather than a local of
 // Main(), because RenderMenu() toggles it from outside the frame loop.
@@ -30,6 +29,20 @@ bool g_WindowVisible = false;
 // when the user leaves it, and holding on to a stale handle is how a plugin
 // takes the game down with it.
 CGameCtnEditorFree@ g_Editor = null;
+
+// The last palette scan. Empty until the user asks for one.
+//
+// Held here rather than recomputed per frame because a scan walks every block
+// model in the palette - cheap once, wasteful sixty times a second. It is a
+// snapshot: it does not follow the palette if the editor changes environment,
+// which is why the View says when it was taken.
+array<Model::BlockEntry@> g_Palette;
+bool g_HasScanned = false;
+
+// The subset of g_Palette that declares no clip at all. Filtered once, at scan
+// time, rather than by the View every frame: the View displays, it does not
+// compute.
+array<Model::BlockEntry@> g_Unconnectable;
 
 // Openplanet entry point, called once when the plugin loads.
 void Main()
@@ -65,4 +78,20 @@ void RenderMenu()
 bool HasEditor()
 {
 	return g_Editor !is null && g_Editor.PluginMapType !is null;
+}
+
+// Reads the palette into g_Palette. Called from the View's button, because a
+// scan is a user decision - it is never run on its own.
+void ScanPalette()
+{
+	if (!HasEditor()) return;
+
+	g_Palette = Model::ScanPalette(g_Editor.PluginMapType);
+	g_Unconnectable = Model::UnconnectableOf(g_Palette);
+	g_HasScanned = true;
+
+	// Printed as well as shown, so the raw counts survive in the log even when
+	// the window is closed or the numbers look wrong.
+	print("MapDecorator scanned " + g_Palette.Length + " block models, "
+		+ g_Unconnectable.Length + " of them declare no clip");
 }

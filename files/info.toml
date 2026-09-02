@@ -2,10 +2,10 @@
 name     = "MapDecorator"
 author   = "SebastienGrana"
 category = "Editor"
-version  = "0.1.0"
+version  = "0.2.0"
 
 # Openplanet compiles every .as file in this folder into ONE module - there is
 # no #include and no per-file scope. The MVC layers are therefore namespaces,
 # not separate modules, and the file names carry the layer so that the folder
 # still reads as a layered design.
-# See "context AI/CONTEXTE-MAPDECORATOR.md" section 0.2.
+# See "context AI/03-architecture.md".
