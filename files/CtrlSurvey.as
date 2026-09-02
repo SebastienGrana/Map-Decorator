@@ -42,15 +42,19 @@ namespace Ctrl
 		if (!HasEditor()) return;
 
 		auto pluginMap = g_Editor.PluginMapType;
-		g_Blocks = Model::ScanMap(pluginMap);
+		uint freeMapping = 0;
+		g_Blocks = Model::ScanMap(pluginMap, freeMapping);
 		g_MapName = pluginMap.MapName;
 		g_Index = 0;
 		g_Loaded = true;
 
 		LoadLabels();
 
+		// The counts are printed beside the verdict on purpose: a survey that
+		// says only "ready" cannot be told from a survey that read nothing.
 		print("MapDecorator survey: " + g_Blocks.Length + " blocks on '"
-			+ g_MapName + "', " + g_Labels.Count() + " already labelled");
+			+ g_MapName + "', " + g_Labels.Count() + " already labelled, "
+			+ freeMapping + " skipped (free mapping)");
 
 		MoveCursorToCurrent();
 	}

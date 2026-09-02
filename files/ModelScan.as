@@ -17,6 +17,11 @@
 
 namespace Model
 {
+	// A block placed in free mapping has no cell: the engine stores 0xFFFFFFFF
+	// in its coordinates. Such a block cannot be pointed at by a cell cursor,
+	// so the survey skips it - but it is counted, never dropped in silence.
+	const uint c_NoCoord = 4294967295;
+
 	// One block as the map holds it. A snapshot, not a handle: the survey walks
 	// this list while the user moves around the editor, and keeping engine
 	// pointers alive across that is how a plugin takes the game down with it.
@@ -26,20 +31,9 @@ namespace Model
 		nat3 coord;
 		bool isGround;
 
-		// NO WAYPOINT FLAG HERE, and it is not an oversight.
-		//
-		// CGameCtnBlock.WaypointSpecialProperty would say whether a block is a
-		// start, checkpoint or finish - the one role the game declares itself,
-		// and so the obvious ground truth to check a classification against.
-		// Reading it CRASHED THE GAME: Openplanet logged "Invalid address for
-		// member ID 03057010 ... Setting it to null" and the process went down
-		// on the next frame.
-		//
-		// That field carries no "// Maniascript" marker in Openplanet.h, and
-		// the same evening an unmarked field (VariantBaseGround) had already
-		// proved to be a trap. Unmarked means present in the dump, not safe to
-		// touch. A waypoint source has to be found elsewhere before this comes
-		// back.
+		// NO WAYPOINT FLAG HERE YET, and it is not an oversight. See the note
+		// at the bottom of this file: the field that would give it took the
+		// game down, and its safe replacement has not been tried in game.
 	}
 
 	// Every block placed on the map.
@@ -47,21 +41,31 @@ namespace Model
 	// Blocks, not BlockModels: the palette says what COULD be placed, this says
 	// what IS. The decoration question is about a specific map, so it is this
 	// buffer that matters.
-	array<PlacedBlock@> ScanMap(CGameEditorPluginMap@ pluginMap)
+	//
+	// freeMapping receives the number of blocks skipped for having no cell.
+	array<PlacedBlock@> ScanMap(CGameEditorPluginMap@ pluginMap, uint &out freeMapping)
 	{
 		array<PlacedBlock@> blocks;
+		freeMapping = 0;
 		if (pluginMap is null) return blocks;
 
 		for (uint i = 0; i < pluginMap.Blocks.Length; i++) {
 			auto block = pluginMap.Blocks[i];
 			if (block is null) continue;
 
+			// Free-mapped blocks first: their Coord is meaningless, and the
+			// survey addresses blocks by cell.
+			if (block.CoordX == c_NoCoord || block.CoordZ == c_NoCoord) {
+				freeMapping++;
+				continue;
+			}
+
 			PlacedBlock placed;
-			// Written as an if rather than a ternary: BlockInfo.Name and a string
-			// literal have no common type the compiler will pick on its own.
+			// Written as an if rather than a ternary: BlockModel.Name and a
+			// string literal have no common type the compiler will pick alone.
 			placed.name = "<unknown>";
-			if (block.BlockInfo !is null) placed.name = block.BlockInfo.Name;
-			placed.coord = nat3(block.CoordX, block.CoordY, block.CoordZ);
+			if (block.BlockModel !is null) placed.name = block.BlockModel.Name;
+			placed.coord = block.Coord;
 			placed.isGround = block.IsGround;
 
 			blocks.InsertLast(placed);
@@ -69,3 +73,37 @@ namespace Model
 		return blocks;
 	}
 }
+
+// WHY BlockModel AND Coord, AND NOT BlockInfo AND CoordX/Y/Z
+//
+// CGameCtnBlock carries each of these twice. Openplanet.h marks one of each
+// pair "// Maniascript" and leaves the other bare:
+//
+//     CGameCtnBlockInfo* const BlockInfo;                  <- bare
+//     CGameCtnBlockInfo* const BlockModel;   // Maniascript
+//     uint CoordX; uint CoordY; uint CoordZ;               <- bare
+//     const nat3 Coord;                      // Maniascript
+//
+// Reading the bare BlockInfo CRASHED THE GAME, twice. Openplanet logged
+// "Invalid address for member ID 03057010. This is likely a Nadeo bug! Setting
+// it to null!" and the process went down; 03057000 is CGameCtnBlock's class id
+// and 0x10 lands on BlockInfo. The log holds no MapDecorator line between the
+// load and the warning, which places the death inside this function, before
+// its caller's print - and BlockInfo was the only pointer it dereferenced.
+//
+// The first attempt at this fix blamed WaypointSpecialProperty, removed it, and
+// the warning came back unchanged in the next build. That is the whole reason
+// this note exists: the second fix was chosen on evidence rather than on which
+// field looked most suspicious.
+//
+// Proof by example, which is the standard this project now holds itself to
+// before dereferencing an unmarked pointer: BlockModel appears five times in
+// installed plugins (EditorHelpers, BlocksItemsCounter) reading .Name, .IdName
+// and .PodiumInfo. BlockInfo appears once, on a custom-block path only.
+//
+// The waypoint role is still wanted - a start, checkpoint or finish is route by
+// definition, and free ground truth. The safe source is on the MODEL, not the
+// block: CGameCtnBlockInfo carries "const EWayPointType WaypointType;" with the
+// // Maniascript marker, a plain enum rather than a pointer. It is deliberately
+// NOT read in this build: this build exists to prove the crash is gone, and
+// adding a second change would make a second crash unattributable.
