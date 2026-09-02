@@ -41,12 +41,32 @@ namespace Model
 
 	// The variant a block is placed as by default. Ground first because that is
 	// what a decoration pass puts on the map; air-only blocks (gantries, some
-	// signs) still have to be catalogued, hence the fallback.
+	// signs) still have to be catalogued, hence the fallbacks.
+	//
+	// VariantBase* rather than Variant*: Openplanet.h declares both, but
+	// VariantGround / VariantAir carry the "// Maniascript" marker - they are
+	// the narrower view ManiaScript is given. Reading through them was costing
+	// us blocks: StadiumRoadDirtMultiLap came back with a null variant, hence
+	// zero cells and zero clips, and so counted as a block joining nothing -
+	// which for a road block is plainly false.
+	//
+	// AdditionalVariants* is the last resort and is the whole reason this
+	// plugin is in Openplanet at all: ManiaScript cannot see those buffers.
+	// A block whose only variants live there is invisible to the narrow view.
 	CGameCtnBlockInfoVariant@ DefaultVariantOf(CGameCtnBlockInfo@ model)
 	{
 		if (model is null) return null;
-		if (model.VariantGround !is null) return model.VariantGround;
-		return model.VariantAir;
+
+		if (model.VariantBaseGround !is null) return model.VariantBaseGround;
+		if (model.VariantBaseAir !is null) return model.VariantBaseAir;
+
+		if (model.AdditionalVariantsGround.Length > 0) {
+			return model.AdditionalVariantsGround[0];
+		}
+		if (model.AdditionalVariantsAir.Length > 0) {
+			return model.AdditionalVariantsAir[0];
+		}
+		return null;
 	}
 
 	// Clip slots declared across every cell of a variant.
