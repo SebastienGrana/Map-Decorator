@@ -1,0 +1,5 @@
+# Le contexte de travail avec l'assistant n'est pas versionné : ce sont des
+# notes de collaboration, pas le produit. Elles citent des chemins locaux et
+# changent à chaque séance, ce qui polluerait l'historique du plugin.
+context AI/
+CLAUDE.md

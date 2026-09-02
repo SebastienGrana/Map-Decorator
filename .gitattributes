@@ -1,0 +1,10 @@
+# deploy.sh est lancé par bash : un checkout en CRLF le rendrait inexécutable
+# ("bad interpreter"). On force LF quel que soit core.autocrlf.
+*.sh text eol=lf
+
+# Les sources du plugin sont écrites en LF et déployées telles quelles vers
+# Openplanet. Les garder en LF évite qu'un checkout réécrive tout le fichier et
+# noie le prochain diff dans un changement de fins de ligne.
+*.as   text eol=lf
+*.toml text eol=lf
+*.md   text eol=lf
