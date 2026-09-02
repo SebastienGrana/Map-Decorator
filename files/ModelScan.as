@@ -26,11 +26,20 @@ namespace Model
 		nat3 coord;
 		bool isGround;
 
-		// True for start, checkpoint, finish and multilap blocks. These are the
-		// only blocks whose role the game itself declares, which makes them the
-		// one piece of ground truth a classification can be checked against -
-		// a waypoint is on the route by definition.
-		bool isWaypoint;
+		// NO WAYPOINT FLAG HERE, and it is not an oversight.
+		//
+		// CGameCtnBlock.WaypointSpecialProperty would say whether a block is a
+		// start, checkpoint or finish - the one role the game declares itself,
+		// and so the obvious ground truth to check a classification against.
+		// Reading it CRASHED THE GAME: Openplanet logged "Invalid address for
+		// member ID 03057010 ... Setting it to null" and the process went down
+		// on the next frame.
+		//
+		// That field carries no "// Maniascript" marker in Openplanet.h, and
+		// the same evening an unmarked field (VariantBaseGround) had already
+		// proved to be a trap. Unmarked means present in the dump, not safe to
+		// touch. A waypoint source has to be found elsewhere before this comes
+		// back.
 	}
 
 	// Every block placed on the map.
@@ -48,10 +57,12 @@ namespace Model
 			if (block is null) continue;
 
 			PlacedBlock placed;
-			placed.name = (block.BlockInfo !is null) ? block.BlockInfo.Name : "<unknown>";
+			// Written as an if rather than a ternary: BlockInfo.Name and a string
+			// literal have no common type the compiler will pick on its own.
+			placed.name = "<unknown>";
+			if (block.BlockInfo !is null) placed.name = block.BlockInfo.Name;
 			placed.coord = nat3(block.CoordX, block.CoordY, block.CoordZ);
 			placed.isGround = block.IsGround;
-			placed.isWaypoint = block.WaypointSpecialProperty !is null;
 
 			blocks.InsertLast(placed);
 		}

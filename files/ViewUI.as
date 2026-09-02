@@ -19,7 +19,10 @@ namespace View
 		if (UI::Begin("MapDecorator " + c_Version, g_WindowVisible)) {
 			if (!HasEditor()) {
 				UI::TextDisabled("Open a map in the editor to use MapDecorator.");
-			} else if (UI::BeginTabBar("modes")) {
+			} else {
+				// BeginTabBar returns void in this Openplanet build, so it is a
+				// statement; only BeginTabItem answers whether to draw.
+				UI::BeginTabBar("modes");
 				if (UI::BeginTabItem("Survey")) {
 					RenderSurvey();
 					UI::EndTabItem();
@@ -82,12 +85,6 @@ namespace View
 		UI::Text(block.name);
 		UI::TextDisabled("  cell " + block.coord.x + " / " + block.coord.y
 			+ " / " + block.coord.z + (block.isGround ? "   ground" : "   air"));
-
-		// A waypoint is on the route by definition, so saying so removes the
-		// one case where the user might have to guess.
-		if (block.isWaypoint) {
-			UI::Text("\$fc0this block is a waypoint - it is on the route by definition");
-		}
 
 		auto current = Ctrl::g_Labels.Get(block.coord);
 		if (current != Model::Klass::Unlabelled) {

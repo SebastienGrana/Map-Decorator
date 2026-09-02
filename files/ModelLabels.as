@@ -125,7 +125,7 @@ namespace Model
 	string LabelFileFor(const string &in mapName)
 	{
 		string safe;
-		for (uint i = 0; i < mapName.Length; i++) {
+		for (uint i = 0; i < uint(mapName.Length); i++) {
 			string c = mapName.SubStr(i, 1);
 			bool ok = (c >= "0" && c <= "9") || (c >= "A" && c <= "Z")
 				|| (c >= "a" && c <= "z") || c == "-" || c == "_";
