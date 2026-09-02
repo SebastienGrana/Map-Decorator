@@ -18,7 +18,7 @@
 // STATUS: reads the palette and reports what joins nothing. Nothing is placed.
 
 // Shown in the window title so a screenshot always says which build is loaded.
-const string c_Version = "0.2.0";
+const string c_Version = "0.2.1";
 
 // Whether the plugin window is open. A plain global rather than a local of
 // Main(), because RenderMenu() toggles it from outside the frame loop.
@@ -94,4 +94,15 @@ void ScanPalette()
 	// the window is closed or the numbers look wrong.
 	print("MapDecorator scanned " + g_Palette.Length + " block models, "
 		+ g_Unconnectable.Length + " of them declare no clip");
+
+	// Each clip-less block is named with its cell count, because the count
+	// alone cannot be trusted. A block with neither a ground nor an air variant
+	// yields a null variant, hence zero clips AND zero cells - it looks like a
+	// block that joins nothing while really being a block we failed to read.
+	// Printing cells separates the two: 0 cells means artefact, not scenery.
+	for (uint i = 0; i < g_Unconnectable.Length; i++) {
+		auto entry = g_Unconnectable[i];
+		print("  no clip: " + entry.name + "  (" + entry.cells + " cells, page "
+			+ entry.page + ")");
+	}
 }
