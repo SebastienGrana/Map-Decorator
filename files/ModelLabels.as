@@ -11,7 +11,7 @@
 //
 // This file is that ground truth. The user walks the map, says "this one is
 // route, that one is support, that one is decoration", and the labels are
-// written where the offline tools in gbx can read them back and check any
+// written where the offline tools in Cairn-VlpLib can read them back and check any
 // proposed rule against a human verdict.
 //
 // The file is JSON keyed by cell, not by index: a block's position in the
@@ -31,15 +31,36 @@ namespace Model
 		Unlabelled = 0,
 		Route      = 1,  // the player drives through this
 		Support    = 2,  // carries or frames the race, but is not driven on
-		Decor      = 3   // could be removed and the race would be unchanged
+		Decor      = 3,  // could be removed and the race would be unchanged
+
+		// Route, but derived by the plugin from the block's waypoint role rather
+		// than judged by the user. Far from the other values on purpose: this
+		// file is the ground truth a rule gets fitted against, so a label the
+		// code produced must never be indistinguishable from a human verdict -
+		// that would fit the rule against itself. The offline tools can fold it
+		// into Route or drop it, and the choice stays theirs because the JSON
+		// still says which is which.
+		RouteWaypoint = 101
 	}
 
 	string KlassName(Klass k)
 	{
 		if (k == Klass::Route)   return "Route";
+		if (k == Klass::RouteWaypoint) return "Route (waypoint)";
 		if (k == Klass::Support) return "Support";
 		if (k == Klass::Decor)   return "Decor";
 		return "unlabelled";
+	}
+
+	// The three-way count behind the Map tab's bar, once the track is guessed
+	// or measured. Filled with zero until a detection path actually exists -
+	// a bar drawn from invented numbers would be a lie the window tells
+	// before the plugin has done any work.
+	class Split
+	{
+		uint route;
+		uint support;
+		uint decor;
 	}
 
 	// Labels for one map, keyed by "x/y/z".

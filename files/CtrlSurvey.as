@@ -36,26 +36,98 @@ namespace Ctrl
 	// few thousand blocks is only bearable if finished work stays finished.
 	bool g_SkipLabelled = true;
 
+	// The waypoint check. Start, finish and checkpoint blocks are route by
+	// definition, so the plugin labels them itself - but it shows them to the
+	// user FIRST, before anything else, rather than quietly folding them in.
+	// An automatism that is never looked at is an assumption, and this project
+	// has already paid twice for assumptions it never put in front of an eye.
+	bool g_WaypointPass = false;
+	uint g_WaypointCount = 0;
+
 	// Reads the map and loads whatever labels were saved for it before.
 	void BeginSurvey()
 	{
-		if (!HasEditor()) return;
+		Diag("survey: the button reached BeginSurvey");
+		if (!HasEditor()) {
+			Diag("survey: no editor, nothing done");
+			return;
+		}
 
 		auto pluginMap = g_Editor.PluginMapType;
+		Diag("survey: PluginMapType is " + (pluginMap is null ? "null" : "live"));
+
 		uint freeMapping = 0;
 		g_Blocks = Model::ScanMap(pluginMap, freeMapping);
+		Diag("survey: ScanMap returned " + g_Blocks.Length + " blocks");
+
 		g_MapName = pluginMap.MapName;
+		Diag("survey: MapName = '" + g_MapName + "'");
+
 		g_Index = 0;
 		g_Loaded = true;
 
 		LoadLabels();
+		Diag("survey: labels loaded, " + g_Labels.Count() + " on file");
+
+		g_WaypointCount = ApplyWaypointLabels();
+		g_WaypointPass = g_WaypointCount > 0;
+		if (g_WaypointPass) g_Index = FirstEligible();
 
 		// The counts are printed beside the verdict on purpose: a survey that
 		// says only "ready" cannot be told from a survey that read nothing.
 		print("MapDecorator survey: " + g_Blocks.Length + " blocks on '"
 			+ g_MapName + "', " + g_Labels.Count() + " already labelled, "
 			+ freeMapping + " skipped (free mapping)");
+		print("MapDecorator waypoints: " + g_WaypointCount
+			+ " blocks auto-labelled Route (waypoint), shown first for checking");
 
+		Diag("survey: about to move the cursor");
+		MoveCursorToCurrent();
+		Diag("survey: complete");
+	}
+
+	// Labels every waypoint block the user has not already judged, and answers
+	// how many. A block the user labelled by hand is left alone even when the
+	// two disagree: the point of this file is that his verdict wins.
+	uint ApplyWaypointLabels()
+	{
+		uint n = 0;
+		for (uint i = 0; i < g_Blocks.Length; i++) {
+			if (g_Blocks[i].waypoint == Model::c_WaypointNone) continue;
+			if (g_Labels.Get(g_Blocks[i].coord) != Model::Klass::Unlabelled) continue;
+			g_Labels.Set(g_Blocks[i].coord, Model::Klass::RouteWaypoint);
+			n++;
+		}
+		if (n > 0) SaveLabels();
+		return n;
+	}
+
+	// Whether the survey stops on a block. Two regimes, and the waypoint pass
+	// ignores g_SkipLabelled on purpose: during that pass every block in scope
+	// carries a label already, so honouring the checkbox would skip the whole
+	// pass and the check would silently never happen.
+	bool Eligible(uint i)
+	{
+		if (g_WaypointPass) return g_Blocks[i].waypoint != Model::c_WaypointNone;
+		if (!g_SkipLabelled) return true;
+		return g_Labels.Get(g_Blocks[i].coord) == Model::Klass::Unlabelled;
+	}
+
+	int FirstEligible()
+	{
+		for (uint i = 0; i < g_Blocks.Length; i++) {
+			if (Eligible(i)) return int(i);
+		}
+		return 0;
+	}
+
+	// Ends the waypoint check and drops the survey at the first block that is
+	// still to be judged. Called from the window, never automatically: only
+	// the user can say he has seen enough.
+	void EndWaypointPass()
+	{
+		g_WaypointPass = false;
+		g_Index = FirstEligible();
 		MoveCursorToCurrent();
 	}
 
@@ -82,16 +154,36 @@ namespace Ctrl
 
 	void MoveCursorToCurrent()
 	{
+		Diag("cursor: enter");
 		auto block = Current();
-		if (block is null || !HasEditor()) return;
+		if (block is null || !HasEditor()) {
+			Diag("cursor: nothing to point at");
+			return;
+		}
 
 		auto pluginMap = g_Editor.PluginMapType;
+		Diag("cursor: target " + block.coord.x + "/" + block.coord.y
+			+ "/" + block.coord.z);
 
+		// Each write is announced before it happens and confirmed after. These
+		// two lines are the only thing in this plugin that writes into the
+		// engine, and neither has ever been seen to complete.
+		Diag("cursor: reading pluginMap.Cursor");
 		if (pluginMap.Cursor !is null) {
+			Diag("cursor: writing the plugin cursor");
 			pluginMap.Cursor.Coord = block.coord;
+			Diag("cursor: plugin cursor written");
+		} else {
+			Diag("cursor: plugin cursor is null");
 		}
+
+		Diag("cursor: reading g_Editor.Cursor");
 		if (g_Editor.Cursor !is null) {
+			Diag("cursor: writing the block cursor");
 			g_Editor.Cursor.Coord = block.coord;
+			Diag("cursor: block cursor written");
+		} else {
+			Diag("cursor: block cursor is null");
 		}
 
 		if (!g_ReadbackPrinted) {
@@ -107,6 +199,7 @@ namespace Ctrl
 					+ g_Editor.Cursor.Coord.y + "/" + g_Editor.Cursor.Coord.z);
 			}
 		}
+		Diag("cursor: done");
 	}
 
 	// Step through the survey. Returns without moving when there is nowhere
@@ -121,8 +214,7 @@ namespace Ctrl
 			i += direction;
 			if (i < 0 || uint(i) >= g_Blocks.Length) return;
 
-			if (!g_SkipLabelled) break;
-			if (g_Labels.Get(g_Blocks[i].coord) == Model::Klass::Unlabelled) break;
+			if (Eligible(uint(i))) break;
 		}
 		if (i < 0 || uint(i) >= g_Blocks.Length) return;
 

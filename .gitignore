@@ -3,3 +3,12 @@
 # changent à chaque séance, ce qui polluerait l'historique du plugin.
 context AI/
 CLAUDE.md
+CHANTIER.md
+
+# Les maquettes d'interface non plus : ce sont nos documents de travail, pas le
+# produit. Elles sont en avance sur le code et changent a chaque discussion.
+mockups/
+
+# Si un jour des commandes de session vivent ici : outillage de collaboration,
+# pas produit. (/tache vit au niveau utilisateur, ~/.claude/commands/.)
+.claude/
