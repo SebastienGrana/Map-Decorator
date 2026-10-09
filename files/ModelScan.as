@@ -256,10 +256,11 @@ namespace Model
 //     BlocksItemsCounter/Source/Libs/Objects.as:29
 //     EditorHelpers/src/EditorFunction/PodiumReminder.as:185
 //
-// STILL TO COME. The waypoint role is free ground truth - a start, checkpoint
-// or finish is route by definition - and the safe source is on the model:
-// CGameCtnBlockInfo carries "const EWayPointType WaypointType;" (1909), a
-// marked plain enum rather than a pointer. It is deliberately not read yet:
-// this build existed to prove the crash was gone, and a second change would
-// have made a second crash unattributable. That proof is now in - 1831 blocks
-// read, survey running - so WaypointType is the next thing this file gains.
+// THE WAYPOINT ROLE CAME SECOND, ON PURPOSE. It is free ground truth - a
+// start, checkpoint or finish is route by definition - and the safe source is
+// on the model: CGameCtnBlockInfo carries "const EWayPointType WaypointType;"
+// (1909), a marked plain enum rather than a pointer. It was held back until
+// the fix above had proven the crash gone - 1831 blocks read, survey running -
+// because a second change in the same build would have made a second crash
+// unattributable. ScanMap now reads it into PlacedBlock.waypoint, through
+// block.BlockModel, never through a pointer on the block itself.

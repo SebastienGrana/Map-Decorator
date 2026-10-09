@@ -9,8 +9,10 @@
 // default this file should use, with plain PlaceBlock reserved for a case the
 // user explicitly asked for.
 //
-// STATUS: PlacePlan writes; nothing calls it yet outside the Debug tab's
-// temporary test bench (U4 undoes what it writes).
+// STATUS: PlacePlan writes, called from the Decorate tab's Place button
+// (RenderPlaceButton, ViewUI.as), and UndoPass reverses it from the "Undo this
+// pass" button. Both run for real, but Model::BuildPlan still returns an empty
+// plan, so in practice no block is written yet.
 
 namespace Ctrl
 {
