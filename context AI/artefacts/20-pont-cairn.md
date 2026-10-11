@@ -10,3 +10,6 @@ Le plugin lit summary.json, le résumé par modèle que cairn produit, et Previe
 - P6 : Math::Randomizer(seed), tirage pondéré par off_route, mélange, densité, rotation · dépend de P5
 ## Journal
 ## Bilan
+- Livré : P1 : le contexte remis d'accord avec Cairn. La suite du pont passe par l'audit AMD du kit, qui l'a re-découpée.
+- Surpris : Le P2 raté venait d'un socle faux : des notes périmées. L'audit AMD en a relevé 25 (21-audit-amd.md).
+- Estimé : estimé non noté · cadré 6 · joué 1 fiches ? $
