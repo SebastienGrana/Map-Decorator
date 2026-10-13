@@ -47,27 +47,21 @@ namespace Ctrl
 	// Reads the map and loads whatever labels were saved for it before.
 	void BeginSurvey()
 	{
-		Diag("survey: the button reached BeginSurvey");
 		if (!HasEditor()) {
-			Diag("survey: no editor, nothing done");
 			return;
 		}
 
 		auto pluginMap = g_Editor.PluginMapType;
-		Diag("survey: PluginMapType is " + (pluginMap is null ? "null" : "live"));
 
 		uint freeMapping = 0;
 		g_Blocks = Model::ScanMap(pluginMap, freeMapping);
-		Diag("survey: ScanMap returned " + g_Blocks.Length + " blocks");
 
 		g_MapName = pluginMap.MapName;
-		Diag("survey: MapName = '" + g_MapName + "'");
 
 		g_Index = 0;
 		g_Loaded = true;
 
 		LoadLabels();
-		Diag("survey: labels loaded, " + g_Labels.Count() + " on file");
 
 		g_WaypointCount = ApplyWaypointLabels();
 		g_WaypointPass = g_WaypointCount > 0;
@@ -81,9 +75,7 @@ namespace Ctrl
 		print("MapDecorator waypoints: " + g_WaypointCount
 			+ " blocks auto-labelled Route (waypoint), shown first for checking");
 
-		Diag("survey: about to move the cursor");
 		MoveCursorToCurrent();
-		Diag("survey: complete");
 	}
 
 	// Labels every waypoint block the user has not already judged, and answers
@@ -154,36 +146,21 @@ namespace Ctrl
 
 	void MoveCursorToCurrent()
 	{
-		Diag("cursor: enter");
 		auto block = Current();
 		if (block is null || !HasEditor()) {
-			Diag("cursor: nothing to point at");
 			return;
 		}
 
 		auto pluginMap = g_Editor.PluginMapType;
-		Diag("cursor: target " + block.coord.x + "/" + block.coord.y
-			+ "/" + block.coord.z);
 
-		// Each write is announced before it happens and confirmed after. These
-		// two lines are the only thing in this plugin that writes into the
-		// engine, and neither has ever been seen to complete.
-		Diag("cursor: reading pluginMap.Cursor");
+		// Both writes reach into the engine; the read-back below, printed on
+		// the first move, says whether they took.
 		if (pluginMap.Cursor !is null) {
-			Diag("cursor: writing the plugin cursor");
 			pluginMap.Cursor.Coord = block.coord;
-			Diag("cursor: plugin cursor written");
-		} else {
-			Diag("cursor: plugin cursor is null");
 		}
 
-		Diag("cursor: reading g_Editor.Cursor");
 		if (g_Editor.Cursor !is null) {
-			Diag("cursor: writing the block cursor");
 			g_Editor.Cursor.Coord = block.coord;
-			Diag("cursor: block cursor written");
-		} else {
-			Diag("cursor: block cursor is null");
 		}
 
 		if (!g_ReadbackPrinted) {
@@ -199,7 +176,6 @@ namespace Ctrl
 					+ g_Editor.Cursor.Coord.y + "/" + g_Editor.Cursor.Coord.z);
 			}
 		}
-		Diag("cursor: done");
 	}
 
 	// Step through the survey. Returns without moving when there is nowhere

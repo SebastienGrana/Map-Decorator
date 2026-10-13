@@ -60,57 +60,34 @@ namespace Model
 		array<PlacedBlock@> blocks;
 		freeMapping = 0;
 		if (pluginMap is null) {
-			Diag("scan: pluginMap is null, nothing to read");
 			return blocks;
 		}
-
-		// The editor says when it is willing to answer. Never checked before,
-		// and it is the only state gate the API offers (Openplanet.h:7107).
-		Diag("scan: IsEditorReadyForRequest = "
-			+ (pluginMap.IsEditorReadyForRequest ? "yes" : "no"));
 
 		// THE MAP, NOT THE PLUGIN. pluginMap.Map (Openplanet.h:7104, marked) is
 		// a handle to the real CGameCtnChallenge. Read the note at the bottom of
 		// this file before ever putting pluginMap.Blocks back.
 		auto map = pluginMap.Map;
 		if (map is null) {
-			Diag("scan: pluginMap.Map is null, nothing to read");
 			return blocks;
 		}
-		Diag("scan: pluginMap.Map is live");
 
 		// Snapshot the buffer into a local, the way BlocksItemsCounter does
 		// (Objects.as:29). The previous version re-read the property on every
 		// loop condition and again on every index - three engine lookups per
 		// block where production does one for the whole walk.
-		Diag("scan: about to snapshot map.Blocks");
 		auto buffer = map.Blocks;
 		uint count = buffer.Length;
-		Diag("scan: buffer.Length = " + count);
 
 		for (uint i = 0; i < count; i++) {
-			// The first blocks in full, then one in a hundred. The fault this
-			// instrument was built for is deterministic and lands on block 0, so
-			// full detail early is what pays; tracing all 1249 would emit some
-			// 5000 lines in a single frame and drown the run that finally works.
-			bool trace = (i < 3 || i % 100 == 0);
-
-			if (trace) Diag("scan " + i + " a: about to index the buffer");
 			auto block = buffer[i];
-			// This line is the whole point of the probe: reaching it proves the
-			// INDEXING survived, which is what killed v0.3.4 five times over.
-			if (trace) Diag("scan " + i + " a2: indexing survived");
 			if (block is null) {
-				if (trace) Diag("scan " + i + " a3: null handle, skipped");
 				continue;
 			}
 
 			// Free-mapped blocks first: their Coord is meaningless, and the
-			// survey addresses blocks by cell. Read into locals so the trace can
-			// print what was actually read, not what we assume was read.
+			// survey addresses blocks by cell.
 			uint cx = block.CoordX;
 			uint cz = block.CoordZ;
-			if (trace) Diag("scan " + i + " b: CoordX=" + cx + " CoordZ=" + cz);
 			if (cx == c_NoCoord || cz == c_NoCoord) {
 				freeMapping++;
 				continue;
@@ -128,19 +105,13 @@ namespace Model
 				placed.name = block.BlockModel.Name;
 				placed.waypoint = int(block.BlockModel.WaypointType);
 			}
-			if (trace) Diag("scan " + i + " c: name = " + placed.name);
 
 			placed.coord = block.Coord;
 			placed.isGround = block.IsGround;
-			if (trace) Diag("scan " + i + " d: cell " + placed.coord.x + "/"
-				+ placed.coord.y + "/" + placed.coord.z
-				+ (placed.isGround ? " ground" : " air"));
 
 			blocks.InsertLast(placed);
 		}
 
-		Diag("scan: loop finished, " + blocks.Length + " kept, "
-			+ freeMapping + " free-mapped");
 		return blocks;
 	}
 
@@ -234,10 +205,11 @@ namespace Model
 // member reads and logs "Invalid address for member ID ..." when one fails,
 // setting it to null and surviving. That warning appeared at the 22:42
 // crash. It did NOT appear at the 23:50 one - the process died before any
-// CGameCtnBlock member was ever read. Which is why the trace kept below,
-// "indexing survived", is placed between buffer[i] and the first field read:
-// it is the line that discriminates, and the line that never printed until
-// this version.
+// CGameCtnBlock member was ever read. Which is why the trace line "indexing
+// survived" sat between buffer[i] and the first field read: it was the line
+// that discriminated, and the line that never printed until this version.
+// That trace, the Diag() instrument, was removed once the fault was named
+// (MD2, 2026-10-13); the fix above is what stays.
 //
 // TWO EARLIER FIXES BLAMED THE WRONG THING. v0.3.2 removed
 // WaypointSpecialProperty; the crash came back. The next attempt blamed the

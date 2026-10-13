@@ -140,6 +140,11 @@ Model::Plan g_Plan;
 // them. Undo (U4) is only allowed to remove what is recorded here - a
 // placement PlaceBlock_NoDestruction refused was never written to the map.
 // Replaced wholesale by each PlacePlan call, like g_Plan.
+//
+// It keeps no engine handle (invariant 3): a CGameCtnBlock@ held across an
+// editor exit takes the game down, as with Model::PlacedBlock. Each entry
+// holds only what finds the block again by re-reading the map at undo time:
+// model name, coordinate, direction.
 array<Model::PlacementEntry@> g_PlacedLog;
 
 // Whether the pending Place would drop an undo point first. Checked by

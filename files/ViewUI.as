@@ -833,9 +833,6 @@ namespace View
 
 	void RenderLog()
 	{
-		bool verbose = UI::Checkbox("Verbose", g_Verbose);
-		if (verbose != g_Verbose) g_Verbose = verbose;
-
 		UI::BeginChild("log_lines", vec2(0, c_ListHeight));
 		for (uint i = 0; i < g_LogLines.Length; i++) {
 			UI::Text(g_LogLines[i]);

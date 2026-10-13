@@ -24,7 +24,7 @@
 // "c":1 is const. The buffer that faulted is const - consistent with a derived
 // view computed on demand. This one is not const, so it is storage the editor
 // keeps for the plugin to fill. That is an argument, not a proof, which is why
-// every line below is traced.
+// the buffer's length is read back and printed after every write.
 //
 // NOTHING IS DOCUMENTED. The ManiaScript reference lists CustomSelectionCoords,
 // CustomSelectionRGB, ShowCustomSelection and HideCustomSelection with their
@@ -51,60 +51,41 @@ namespace Ctrl
 	// goes through the property, and every one is read back through it too.
 	void HighlightCurrent()
 	{
-		Diag("hl: enter");
 		if (!HasEditor()) {
-			Diag("hl: no editor");
 			return;
 		}
 
 		auto pluginMap = g_Editor.PluginMapType;
 		if (pluginMap is null) {
-			Diag("hl: PluginMapType is null");
 			return;
 		}
 
 		auto block = Current();
 		if (block is null) {
-			Diag("hl: no current block");
 			return;
 		}
 
 		g_HighlightTried = true;
 
 		// Step 1. Read the buffer's length. This alone is what killed the game
-		// on the other buffer, so it gets its own trace on both sides.
-		Diag("hl 1: about to read CustomSelectionCoords.Length");
+		// on the other buffer.
 		uint before = pluginMap.CustomSelectionCoords.Length;
-		Diag("hl 1: Length = " + before);
 
 		// Step 2. Empty it, so the highlight is the current block and not the
 		// whole history of blocks visited.
 		if (before > 0) {
-			Diag("hl 2: about to RemoveRange(0, " + before + ")");
 			pluginMap.CustomSelectionCoords.RemoveRange(0, before);
-			Diag("hl 2: cleared, Length = "
-				+ pluginMap.CustomSelectionCoords.Length);
-		} else {
-			Diag("hl 2: already empty");
 		}
 
-		// Step 3. Add the one cell. The read-back is the whole point: if the
-		// property handed back a copy, Length stays 0 and the API is innocent.
-		Diag("hl 3: about to Add " + block.coord.x + "/" + block.coord.y
-			+ "/" + block.coord.z);
+		// Step 3. Add the one cell. The read-back below is the whole point: if
+		// the property handed back a copy, Length stays 0 and the API is innocent.
 		pluginMap.CustomSelectionCoords.Add(block.coord);
-		Diag("hl 3: added, Length = " + pluginMap.CustomSelectionCoords.Length);
 
-		Diag("hl 4: about to write CustomSelectionRGB");
 		pluginMap.CustomSelectionRGB = c_HighlightRGB;
-		Diag("hl 4: RGB written");
 
-		Diag("hl 5: about to call ShowCustomSelection");
 		pluginMap.ShowCustomSelection();
-		Diag("hl 5: ShowCustomSelection returned");
 
-		// Printed, not just traced: this line has to survive c_Diag being off,
-		// because it is the one number that says whether the write took.
+		// Always printed: it is the one number that says whether the write took.
 		print("MapDecorator highlight: asked for " + block.coord.x + "/"
 			+ block.coord.y + "/" + block.coord.z + ", buffer now holds "
 			+ pluginMap.CustomSelectionCoords.Length + " cell(s)");
@@ -115,21 +96,16 @@ namespace Ctrl
 	// reloading the plugin.
 	void ClearHighlight()
 	{
-		Diag("hl: clear enter");
 		if (!HasEditor()) return;
 
 		auto pluginMap = g_Editor.PluginMapType;
 		if (pluginMap is null) return;
 
-		Diag("hl: about to call HideCustomSelection");
 		pluginMap.HideCustomSelection();
-		Diag("hl: HideCustomSelection returned");
 
 		uint n = pluginMap.CustomSelectionCoords.Length;
 		if (n > 0) {
-			Diag("hl: about to empty the buffer");
 			pluginMap.CustomSelectionCoords.RemoveRange(0, n);
-			Diag("hl: emptied");
 		}
 		print("MapDecorator highlight: cleared");
 	}
