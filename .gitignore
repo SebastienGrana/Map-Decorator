@@ -10,5 +10,5 @@ CHANTIER.md
 mockups/
 
 # Si un jour des commandes de session vivent ici : outillage de collaboration,
-# pas produit. (/tache vit au niveau utilisateur, ~/.claude/commands/.)
+# pas produit. (/vlp:tache vit dans le plugin vlp, pas dans ce dossier.)
 .claude/
