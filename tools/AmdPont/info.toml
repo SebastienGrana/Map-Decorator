@@ -1,0 +1,9 @@
+[meta]
+name     = "AmdPont"
+author   = "SebastienGrana"
+category = "Developer"
+version  = "0.1.0"
+
+# Plugin d'essai de la fiche AMD5 du kit vlp (audit de MapDecorator), le 2026-10-10.
+# Il ne fait pas partie de MapDecorator : il prouve la boucle script <-> jeu,
+# puis se retire.
