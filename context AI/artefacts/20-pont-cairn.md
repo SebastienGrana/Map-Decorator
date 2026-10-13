@@ -1,6 +1,6 @@
 # Le pont cairn → plugin — notes et journal
 ## Résultat
-Le plugin lit summary.json, le résumé par modèle que cairn produit, et Preview liste un vrai plan « Fill the background » choisi grâce à ces chiffres — sans rien poser sur la carte. Les chiffres sont consommés tels quels et affichés « provisional » : cairn les juge en doute jusqu'à sa colonne role.
+Visé : le plugin lit summary.json, le résumé par modèle que cairn produit, et Preview liste un vrai plan « Fill the background ». Atteint : P1 seule — le plugin ne lit pas summary.json et Preview rend 0 bloc ; la suite passe par C1 à C3 (audit AMD).
 ## Notes
 - P1 : grep anciens chiffres : 0 ligne ; « 7,4 % » : 2 lignes dans 13-strategies.md ; « 26-ghost-validation » : 2 lignes dans 08-etat.md
 - P2 : écrite, ne compile pas (audit AMD) ; abandonnée, reprise par C1
